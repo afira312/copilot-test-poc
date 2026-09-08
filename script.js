@@ -1,11 +1,11 @@
 const INTERVAL_SECONDS = 60;
 const REST_SECONDS = 10;
 const WORKOUT_PATTERNS = [
-  { name: 'Raga Rise', bpm: 128, bass: [98, 73.42, 98, 82.41, 110, 82.41, 98, 73.42], melody: [293.66, 329.63, 369.99, 440, 493.88, 440, 369.99, 329.63], chords: [[196, 246.94, 293.66], [220, 277.18, 329.63], [196, 246.94, 293.66], [164.81, 196, 246.94]] },
-  { name: 'Desi Sprint', bpm: 136, bass: [110, 110, 82.41, 98, 110, 123.47, 98, 82.41], melody: [329.63, 392, 440, 523.25, 587.33, 523.25, 440, 392], chords: [[220, 261.63, 329.63], [246.94, 293.66, 369.99], [196, 246.94, 293.66], [220, 277.18, 329.63]] },
-  { name: 'Monsoon Flow', bpm: 122, bass: [73.42, 87.31, 98, 87.31, 73.42, 98, 110, 98], melody: [293.66, 329.63, 392, 440, 493.88, 440, 392, 329.63], chords: [[146.83, 220, 293.66], [174.61, 261.63, 349.23], [196, 246.94, 293.66], [174.61, 220, 293.66]] },
-  { name: 'Festival Charge', bpm: 142, bass: [130.81, 130.81, 98, 110, 130.81, 146.83, 110, 123.47], melody: [392, 493.88, 587.33, 659.25, 783.99, 659.25, 587.33, 493.88], chords: [[261.63, 329.63, 392], [293.66, 369.99, 440], [246.94, 329.63, 392], [261.63, 329.63, 392]] },
-  { name: 'Victory Groove', bpm: 132, bass: [98, 116.54, 130.81, 116.54, 98, 87.31, 110, 130.81], melody: [329.63, 392, 493.88, 587.33, 659.25, 587.33, 493.88, 392], chords: [[196, 246.94, 293.66], [233.08, 293.66, 349.23], [261.63, 329.63, 392], [220, 277.18, 329.63]] },
+  { name: 'Neon Rush', bpm: 132, bass: [65.41, 65.41, 77.78, 87.31, 65.41, 65.41, 98, 87.31], melody: [523.25, 659.25, 783.99, 659.25, 587.33, 523.25, 659.25, 880], chords: [[261.63, 329.63, 392], [233.08, 293.66, 349.23], [196, 261.63, 329.63], [220, 293.66, 349.23]] },
+  { name: 'Afterglow', bpm: 126, bass: [73.42, 73.42, 87.31, 98, 73.42, 87.31, 110, 98], melody: [440, 493.88, 587.33, 659.25, 587.33, 493.88, 440, 392], chords: [[220, 277.18, 329.63], [246.94, 293.66, 369.99], [196, 246.94, 293.66], [261.63, 329.63, 392]] },
+  { name: 'Pulse Check', bpm: 138, bass: [55, 55, 65.41, 73.42, 55, 65.41, 82.41, 73.42], melody: [392, 493.88, 587.33, 783.99, 659.25, 587.33, 493.88, 440], chords: [[196, 246.94, 293.66], [220, 277.18, 329.63], [174.61, 220, 261.63], [196, 246.94, 329.63]] },
+  { name: 'Main Character', bpm: 140, bass: [82.41, 82.41, 98, 110, 82.41, 98, 123.47, 110], melody: [659.25, 783.99, 880, 1046.5, 880, 783.99, 659.25, 587.33], chords: [[329.63, 392, 493.88], [293.66, 369.99, 440], [261.63, 329.63, 392], [329.63, 392, 493.88]] },
+  { name: 'Last Set', bpm: 134, bass: [61.74, 61.74, 73.42, 82.41, 61.74, 73.42, 98, 87.31], melody: [493.88, 587.33, 659.25, 783.99, 880, 783.99, 659.25, 587.33], chords: [[246.94, 293.66, 369.99], [220, 277.18, 329.63], [261.63, 329.63, 392], [293.66, 369.99, 440]] },
 ];
 const ring = document.querySelector('#progress-ring');
 const timerDisplay = document.querySelector('#timer-display');
@@ -147,18 +147,32 @@ function playMelodyNote(time, frequency) {
   });
 }
 
-function playTabla(time, high) {
+function playKick(time) {
   const oscillator = audioContext.createOscillator();
   const volume = audioContext.createGain();
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(high ? 230 : 130, time);
-  oscillator.frequency.exponentialRampToValueAtTime(high ? 120 : 70, time + 0.08);
+  oscillator.frequency.setValueAtTime(150, time);
+  oscillator.frequency.exponentialRampToValueAtTime(42, time + 0.12);
   volume.gain.setValueAtTime(0.001, time);
-  volume.gain.exponentialRampToValueAtTime(0.1, time + 0.008);
-  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+  volume.gain.exponentialRampToValueAtTime(0.28, time + 0.008);
+  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
   oscillator.connect(volume).connect(musicGain);
   oscillator.start(time);
-  oscillator.stop(time + 0.14);
+  oscillator.stop(time + 0.22);
+}
+
+function playClap(time) {
+  const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let sample = 0; sample < noiseData.length; sample += 1) noiseData[sample] = Math.random() * 2 - 1;
+  const noise = audioContext.createBufferSource();
+  const volume = audioContext.createGain();
+  noise.buffer = noiseBuffer;
+  volume.gain.setValueAtTime(0.001, time);
+  volume.gain.exponentialRampToValueAtTime(0.12, time + 0.006);
+  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+  noise.connect(volume).connect(musicGain);
+  noise.start(time);
+  noise.stop(time + 0.12);
 }
 
 function playChord(time, frequencies) {
@@ -192,7 +206,8 @@ function scheduleBeat(time, step, pattern) {
   playMelodyNote(time, pattern.melody[step % pattern.melody.length]);
   if (step % 2 === 0) playBass(time, pattern.bass[step / 2]);
   if (step % 4 === 0) playChord(time, pattern.chords[(step / 4) % pattern.chords.length]);
-  if (step % 2 === 0) playTabla(time, step % 4 === 0);
+  if (step % 4 === 0 || step % 4 === 2) playKick(time);
+  if (step % 4 === 1 || step % 4 === 3) playClap(time);
 }
 
 function playCompletionSound() {
