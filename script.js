@@ -6,7 +6,6 @@ const statusMessage = document.querySelector('#status-message');
 const completedCount = document.querySelector('#completed-count');
 const startButton = document.querySelector('#start-button');
 const resetButton = document.querySelector('#reset-button');
-const musicButton = document.querySelector('#music-button');
 const circumference = 2 * Math.PI * 132;
 
 let secondsRemaining = INTERVAL_SECONDS;
@@ -36,13 +35,12 @@ function setButton(isRunning) {
 }
 
 function finishInterval() {
-  clearInterval(timerId);
-  timerId = null;
   completedIntervals += 1;
   secondsRemaining = INTERVAL_SECONDS;
-  setButton(false);
+  playCompletionSound();
+  setButton(true);
   timerLabel.textContent = 'Interval complete';
-  statusMessage.textContent = 'Nice work. Ready for another minute.';
+  statusMessage.textContent = 'Next minute is underway.';
   render();
 }
 
@@ -59,6 +57,7 @@ function toggleTimer() {
   if (timerId) {
     clearInterval(timerId);
     timerId = null;
+    stopMusic();
     setButton(false);
     timerLabel.textContent = 'Paused';
     statusMessage.textContent = 'Your minute is paused.';
@@ -68,22 +67,19 @@ function toggleTimer() {
   timerLabel.textContent = 'In progress';
   statusMessage.textContent = 'Stay with it until the minute is done.';
   setButton(true);
+  startMusic();
   timerId = setInterval(tick, 1000);
 }
 
 function resetTimer() {
   clearInterval(timerId);
   timerId = null;
+  stopMusic();
   secondsRemaining = INTERVAL_SECONDS;
   setButton(false);
   timerLabel.textContent = 'Ready when you are';
   statusMessage.textContent = 'Press start to begin your next minute.';
   render();
-}
-
-function setMusicButton(isPlaying) {
-  musicButton.setAttribute('aria-pressed', String(isPlaying));
-  musicButton.querySelector('span:last-child').textContent = isPlaying ? 'Workout beat on' : 'Workout beat off';
 }
 
 function stopMusic() {
@@ -93,7 +89,6 @@ function stopMusic() {
   const fadeTime = audioContext.currentTime + 0.25;
   musicGain.gain.cancelScheduledValues(audioContext.currentTime);
   musicGain.gain.linearRampToValueAtTime(0, fadeTime);
-  setMusicButton(false);
 }
 
 function playKick(time) {
@@ -153,6 +148,24 @@ function scheduleBeat(time, step) {
   if (step % 2 === 0) playBass(time, step % 8 === 0 ? 98 : 73.42);
 }
 
+function playCompletionSound() {
+  if (!audioContext || !musicGain) return;
+  const startTime = audioContext.currentTime;
+  [523.25, 783.99].forEach((frequency, index) => {
+    const oscillator = audioContext.createOscillator();
+    const volume = audioContext.createGain();
+    const noteStart = startTime + index * 0.16;
+    oscillator.type = 'sine';
+    oscillator.frequency.value = frequency;
+    volume.gain.setValueAtTime(0.001, noteStart);
+    volume.gain.exponentialRampToValueAtTime(0.3, noteStart + 0.02);
+    volume.gain.exponentialRampToValueAtTime(0.001, noteStart + 0.45);
+    oscillator.connect(volume).connect(audioContext.destination);
+    oscillator.start(noteStart);
+    oscillator.stop(noteStart + 0.5);
+  });
+}
+
 function startMusic() {
   audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
   audioContext.resume();
@@ -170,20 +183,10 @@ function startMusic() {
       beatStep = (beatStep + 1) % 16;
     }
   }, 25);
-  setMusicButton(true);
-}
-
-function toggleMusic() {
-  if (musicSchedulerId) {
-    stopMusic();
-    return;
-  }
-  startMusic();
 }
 
 startButton.addEventListener('click', toggleTimer);
 resetButton.addEventListener('click', resetTimer);
-musicButton.addEventListener('click', toggleMusic);
 document.addEventListener('keydown', (event) => {
   if (event.code === 'Space' && event.target === document.body) {
     event.preventDefault();

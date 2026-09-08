@@ -79,10 +79,6 @@ h1 em { color: #8da21e; font-style: normal; }
 .primary-button:focus-visible, .reset-button:focus-visible { outline: 3px solid #9ba91d; outline-offset: 4px; }
 .button-icon { display: grid; width: 18px; height: 18px; place-items: center; border: 1px solid var(--ink); border-radius: 50%; font-size: 8px; }
 .reset-button { padding: 8px 0; border: 0; border-bottom: 1px solid var(--ink); color: var(--ink); background: transparent; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; }
-.music-button { display: inline-flex; align-items: center; gap: 8px; margin-top: 26px; padding: 0; border: 0; color: var(--muted); background: transparent; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
-.music-button:hover, .music-button[aria-pressed='true'] { color: var(--ink); }
-.music-button:focus-visible { outline: 3px solid #9ba91d; outline-offset: 5px; }
-.music-icon { display: grid; width: 18px; height: 18px; place-items: center; border: 1px solid currentColor; border-radius: 50%; font-family: 'Manrope', sans-serif; font-size: 12px; }
 .status-message { min-height: 18px; margin: 22px 0 0; color: var(--muted); font-size: 10px; letter-spacing: 0.02em; text-align: center; }
 .footer-note { display: flex; align-items: center; justify-content: center; gap: 17px; color: var(--muted); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
 .footer-line { width: 55px; height: 1px; background: var(--line); }
