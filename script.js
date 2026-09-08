@@ -1,11 +1,11 @@
 const INTERVAL_SECONDS = 60;
 const REST_SECONDS = 10;
 const WORKOUT_PATTERNS = [
-  { bpm: 128, bass: [98, 73.42, 98, 82.41, 110, 82.41, 98, 73.42], melody: [392, 440, 493.88, 587.33, 493.88, 440, 392, 329.63], chords: [[196, 246.94, 293.66], [220, 277.18, 329.63], [196, 246.94, 293.66], [164.81, 196, 246.94]] },
-  { bpm: 136, bass: [110, 110, 82.41, 98, 110, 123.47, 98, 82.41], melody: [440, 523.25, 659.25, 587.33, 523.25, 493.88, 523.25, 659.25], chords: [[220, 261.63, 329.63], [246.94, 293.66, 369.99], [196, 246.94, 293.66], [220, 277.18, 329.63]] },
-  { bpm: 122, bass: [73.42, 87.31, 98, 87.31, 73.42, 98, 110, 98], melody: [293.66, 349.23, 392, 440, 523.25, 440, 392, 349.23], chords: [[146.83, 220, 293.66], [174.61, 261.63, 349.23], [196, 246.94, 293.66], [174.61, 220, 293.66]] },
-  { bpm: 142, bass: [130.81, 130.81, 98, 110, 130.81, 146.83, 110, 123.47], melody: [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 880, 783.99], chords: [[261.63, 329.63, 392], [293.66, 369.99, 440], [246.94, 329.63, 392], [261.63, 329.63, 392]] },
-  { bpm: 132, bass: [98, 116.54, 130.81, 116.54, 98, 87.31, 110, 130.81], melody: [392, 493.88, 587.33, 698.46, 659.25, 587.33, 493.88, 440], chords: [[196, 246.94, 293.66], [233.08, 293.66, 349.23], [261.63, 329.63, 392], [220, 277.18, 329.63]] },
+  { name: 'Raga Rise', bpm: 128, bass: [98, 73.42, 98, 82.41, 110, 82.41, 98, 73.42], melody: [293.66, 329.63, 369.99, 440, 493.88, 440, 369.99, 329.63], chords: [[196, 246.94, 293.66], [220, 277.18, 329.63], [196, 246.94, 293.66], [164.81, 196, 246.94]] },
+  { name: 'Desi Sprint', bpm: 136, bass: [110, 110, 82.41, 98, 110, 123.47, 98, 82.41], melody: [329.63, 392, 440, 523.25, 587.33, 523.25, 440, 392], chords: [[220, 261.63, 329.63], [246.94, 293.66, 369.99], [196, 246.94, 293.66], [220, 277.18, 329.63]] },
+  { name: 'Monsoon Flow', bpm: 122, bass: [73.42, 87.31, 98, 87.31, 73.42, 98, 110, 98], melody: [293.66, 329.63, 392, 440, 493.88, 440, 392, 329.63], chords: [[146.83, 220, 293.66], [174.61, 261.63, 349.23], [196, 246.94, 293.66], [174.61, 220, 293.66]] },
+  { name: 'Festival Charge', bpm: 142, bass: [130.81, 130.81, 98, 110, 130.81, 146.83, 110, 123.47], melody: [392, 493.88, 587.33, 659.25, 783.99, 659.25, 587.33, 493.88], chords: [[261.63, 329.63, 392], [293.66, 369.99, 440], [246.94, 329.63, 392], [261.63, 329.63, 392]] },
+  { name: 'Victory Groove', bpm: 132, bass: [98, 116.54, 130.81, 116.54, 98, 87.31, 110, 130.81], melody: [329.63, 392, 493.88, 587.33, 659.25, 587.33, 493.88, 392], chords: [[196, 246.94, 293.66], [233.08, 293.66, 349.23], [261.63, 329.63, 392], [220, 277.18, 329.63]] },
 ];
 const ring = document.querySelector('#progress-ring');
 const timerDisplay = document.querySelector('#timer-display');
@@ -64,7 +64,7 @@ function startNextInterval() {
   secondsRemaining = INTERVAL_SECONDS;
   setButton(true);
   timerLabel.textContent = `Rep ${completedIntervals + 1}`;
-  statusMessage.textContent = `Minute ${currentPattern + 1} of 5 workout tracks.`;
+  statusMessage.textContent = `${WORKOUT_PATTERNS[currentPattern].name} · track ${currentPattern + 1} of 5.`;
   startMusic(currentPattern);
   render();
 }
@@ -94,11 +94,11 @@ function toggleTimer() {
     timerPhase = 'work';
     currentPattern = 0;
     timerLabel.textContent = 'Rep 1';
-    statusMessage.textContent = 'Minute 1 of 5 workout tracks.';
+    statusMessage.textContent = `${WORKOUT_PATTERNS[currentPattern].name} · track 1 of 5.`;
     startMusic(currentPattern);
   } else if (timerPhase === 'work') {
     timerLabel.textContent = `Rep ${completedIntervals + 1}`;
-    statusMessage.textContent = `Minute ${currentPattern + 1} of 5 workout tracks.`;
+    statusMessage.textContent = `${WORKOUT_PATTERNS[currentPattern].name} · track ${currentPattern + 1} of 5.`;
     startMusic(currentPattern);
   } else {
     timerLabel.textContent = 'Recovery';
@@ -132,16 +132,33 @@ function stopMusic() {
 }
 
 function playMelodyNote(time, frequency) {
+  [frequency, frequency * 2].forEach((noteFrequency, index) => {
+    const oscillator = audioContext.createOscillator();
+    const volume = audioContext.createGain();
+    oscillator.type = index === 0 ? 'triangle' : 'sawtooth';
+    oscillator.frequency.setValueAtTime(noteFrequency * 1.04, time);
+    oscillator.frequency.exponentialRampToValueAtTime(noteFrequency, time + 0.16);
+    volume.gain.setValueAtTime(0.001, time);
+    volume.gain.exponentialRampToValueAtTime(index === 0 ? 0.1 : 0.025, time + 0.025);
+    volume.gain.exponentialRampToValueAtTime(0.001, time + 0.32);
+    oscillator.connect(volume).connect(musicGain);
+    oscillator.start(time);
+    oscillator.stop(time + 0.35);
+  });
+}
+
+function playTabla(time, high) {
   const oscillator = audioContext.createOscillator();
   const volume = audioContext.createGain();
-  oscillator.type = 'triangle';
-  oscillator.frequency.value = frequency;
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(high ? 230 : 130, time);
+  oscillator.frequency.exponentialRampToValueAtTime(high ? 120 : 70, time + 0.08);
   volume.gain.setValueAtTime(0.001, time);
-  volume.gain.exponentialRampToValueAtTime(0.12, time + 0.025);
-  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.28);
+  volume.gain.exponentialRampToValueAtTime(0.1, time + 0.008);
+  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
   oscillator.connect(volume).connect(musicGain);
   oscillator.start(time);
-  oscillator.stop(time + 0.3);
+  oscillator.stop(time + 0.14);
 }
 
 function playChord(time, frequencies) {
@@ -175,6 +192,7 @@ function scheduleBeat(time, step, pattern) {
   playMelodyNote(time, pattern.melody[step % pattern.melody.length]);
   if (step % 2 === 0) playBass(time, pattern.bass[step / 2]);
   if (step % 4 === 0) playChord(time, pattern.chords[(step / 4) % pattern.chords.length]);
+  if (step % 2 === 0) playTabla(time, step % 4 === 0);
 }
 
 function playCompletionSound() {
