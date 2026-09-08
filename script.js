@@ -1,11 +1,11 @@
 const INTERVAL_SECONDS = 60;
 const REST_SECONDS = 10;
 const WORKOUT_PATTERNS = [
-  { bpm: 128, bass: [98, 73.42, 98, 82.41, 110, 82.41, 98, 73.42] },
-  { bpm: 136, bass: [110, 110, 82.41, 98, 110, 123.47, 98, 82.41] },
-  { bpm: 122, bass: [73.42, 87.31, 98, 87.31, 73.42, 98, 110, 98] },
-  { bpm: 142, bass: [130.81, 130.81, 98, 110, 130.81, 146.83, 110, 123.47] },
-  { bpm: 132, bass: [98, 116.54, 130.81, 116.54, 98, 87.31, 110, 130.81] },
+  { bpm: 128, bass: [98, 73.42, 98, 82.41, 110, 82.41, 98, 73.42], melody: [392, 440, 493.88, 587.33, 493.88, 440, 392, 329.63], chords: [[196, 246.94, 293.66], [220, 277.18, 329.63], [196, 246.94, 293.66], [164.81, 196, 246.94]] },
+  { bpm: 136, bass: [110, 110, 82.41, 98, 110, 123.47, 98, 82.41], melody: [440, 523.25, 659.25, 587.33, 523.25, 493.88, 523.25, 659.25], chords: [[220, 261.63, 329.63], [246.94, 293.66, 369.99], [196, 246.94, 293.66], [220, 277.18, 329.63]] },
+  { bpm: 122, bass: [73.42, 87.31, 98, 87.31, 73.42, 98, 110, 98], melody: [293.66, 349.23, 392, 440, 523.25, 440, 392, 349.23], chords: [[146.83, 220, 293.66], [174.61, 261.63, 349.23], [196, 246.94, 293.66], [174.61, 220, 293.66]] },
+  { bpm: 142, bass: [130.81, 130.81, 98, 110, 130.81, 146.83, 110, 123.47], melody: [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 880, 783.99], chords: [[261.63, 329.63, 392], [293.66, 369.99, 440], [246.94, 329.63, 392], [261.63, 329.63, 392]] },
+  { bpm: 132, bass: [98, 116.54, 130.81, 116.54, 98, 87.31, 110, 130.81], melody: [392, 493.88, 587.33, 698.46, 659.25, 587.33, 493.88, 440], chords: [[196, 246.94, 293.66], [233.08, 293.66, 349.23], [261.63, 329.63, 392], [220, 277.18, 329.63]] },
 ];
 const ring = document.querySelector('#progress-ring');
 const timerDisplay = document.querySelector('#timer-display');
@@ -64,7 +64,7 @@ function startNextInterval() {
   secondsRemaining = INTERVAL_SECONDS;
   setButton(true);
   timerLabel.textContent = `Rep ${completedIntervals + 1}`;
-  statusMessage.textContent = `Minute ${currentPattern + 1} of 5 workout beats.`;
+  statusMessage.textContent = `Minute ${currentPattern + 1} of 5 workout tracks.`;
   startMusic(currentPattern);
   render();
 }
@@ -94,11 +94,11 @@ function toggleTimer() {
     timerPhase = 'work';
     currentPattern = 0;
     timerLabel.textContent = 'Rep 1';
-    statusMessage.textContent = 'Minute 1 of 5 workout beats.';
+    statusMessage.textContent = 'Minute 1 of 5 workout tracks.';
     startMusic(currentPattern);
   } else if (timerPhase === 'work') {
     timerLabel.textContent = `Rep ${completedIntervals + 1}`;
-    statusMessage.textContent = `Minute ${currentPattern + 1} of 5 workout beats.`;
+    statusMessage.textContent = `Minute ${currentPattern + 1} of 5 workout tracks.`;
     startMusic(currentPattern);
   } else {
     timerLabel.textContent = 'Recovery';
@@ -131,42 +131,32 @@ function stopMusic() {
   musicGain.gain.linearRampToValueAtTime(0, fadeTime);
 }
 
-function playKick(time) {
+function playMelodyNote(time, frequency) {
   const oscillator = audioContext.createOscillator();
   const volume = audioContext.createGain();
-  oscillator.frequency.setValueAtTime(150, time);
-  oscillator.frequency.exponentialRampToValueAtTime(48, time + 0.12);
-  volume.gain.setValueAtTime(0.8, time);
-  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+  oscillator.type = 'triangle';
+  oscillator.frequency.value = frequency;
+  volume.gain.setValueAtTime(0.001, time);
+  volume.gain.exponentialRampToValueAtTime(0.12, time + 0.025);
+  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.28);
   oscillator.connect(volume).connect(musicGain);
   oscillator.start(time);
-  oscillator.stop(time + 0.2);
+  oscillator.stop(time + 0.3);
 }
 
-function playSnare(time) {
-  const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.12, audioContext.sampleRate);
-  const noiseData = noiseBuffer.getChannelData(0);
-  for (let sample = 0; sample < noiseData.length; sample += 1) noiseData[sample] = Math.random() * 2 - 1;
-  const noise = audioContext.createBufferSource();
-  const volume = audioContext.createGain();
-  noise.buffer = noiseBuffer;
-  volume.gain.setValueAtTime(0.18, time);
-  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
-  noise.connect(volume).connect(musicGain);
-  noise.start(time);
-  noise.stop(time + 0.13);
-}
-
-function playHiHat(time) {
-  const oscillator = audioContext.createOscillator();
-  const volume = audioContext.createGain();
-  oscillator.type = 'square';
-  oscillator.frequency.value = 4200;
-  volume.gain.setValueAtTime(0.035, time);
-  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
-  oscillator.connect(volume).connect(musicGain);
-  oscillator.start(time);
-  oscillator.stop(time + 0.04);
+function playChord(time, frequencies) {
+  frequencies.forEach((frequency) => {
+    const oscillator = audioContext.createOscillator();
+    const volume = audioContext.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = frequency;
+    volume.gain.setValueAtTime(0.001, time);
+    volume.gain.exponentialRampToValueAtTime(0.035, time + 0.08);
+    volume.gain.exponentialRampToValueAtTime(0.001, time + 0.9);
+    oscillator.connect(volume).connect(musicGain);
+    oscillator.start(time);
+    oscillator.stop(time + 1);
+  });
 }
 
 function playBass(time, frequency) {
@@ -182,10 +172,9 @@ function playBass(time, frequency) {
 }
 
 function scheduleBeat(time, step, pattern) {
-  if (step % 4 === 0 || step % 4 === 2) playKick(time);
-  if (step % 4 === 1 || step % 4 === 3) playSnare(time);
-  playHiHat(time);
+  playMelodyNote(time, pattern.melody[step % pattern.melody.length]);
   if (step % 2 === 0) playBass(time, pattern.bass[step / 2]);
+  if (step % 4 === 0) playChord(time, pattern.chords[(step / 4) % pattern.chords.length]);
 }
 
 function playCompletionSound() {
@@ -212,7 +201,7 @@ function startMusic(patternIndex) {
   const pattern = WORKOUT_PATTERNS[patternIndex];
   musicGain = audioContext.createGain();
   musicGain.gain.setValueAtTime(0, audioContext.currentTime);
-  musicGain.gain.linearRampToValueAtTime(0.55, audioContext.currentTime + 0.5);
+  musicGain.gain.linearRampToValueAtTime(0.38, audioContext.currentTime + 0.5);
   musicGain.connect(audioContext.destination);
   nextBeatTime = audioContext.currentTime + 0.05;
   beatStep = 0;
