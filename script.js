@@ -14,7 +14,9 @@ let completedIntervals = 0;
 let timerId = null;
 let audioContext = null;
 let musicGain = null;
-let musicNodes = [];
+let musicSchedulerId = null;
+let nextBeatTime = 0;
+let beatStep = 0;
 
 ring.style.strokeDasharray = circumference;
 
@@ -81,41 +83,98 @@ function resetTimer() {
 
 function setMusicButton(isPlaying) {
   musicButton.setAttribute('aria-pressed', String(isPlaying));
-  musicButton.querySelector('span:last-child').textContent = isPlaying ? 'Ambient sound on' : 'Ambient sound off';
+  musicButton.querySelector('span:last-child').textContent = isPlaying ? 'Workout beat on' : 'Workout beat off';
 }
 
 function stopMusic() {
+  if (musicSchedulerId) clearInterval(musicSchedulerId);
+  musicSchedulerId = null;
   if (!musicGain || !audioContext) return;
   const fadeTime = audioContext.currentTime + 0.25;
   musicGain.gain.cancelScheduledValues(audioContext.currentTime);
   musicGain.gain.linearRampToValueAtTime(0, fadeTime);
-  musicNodes.forEach((node) => node.stop(fadeTime));
-  musicNodes = [];
   setMusicButton(false);
 }
 
+function playKick(time) {
+  const oscillator = audioContext.createOscillator();
+  const volume = audioContext.createGain();
+  oscillator.frequency.setValueAtTime(150, time);
+  oscillator.frequency.exponentialRampToValueAtTime(48, time + 0.12);
+  volume.gain.setValueAtTime(0.8, time);
+  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+  oscillator.connect(volume).connect(musicGain);
+  oscillator.start(time);
+  oscillator.stop(time + 0.2);
+}
+
+function playSnare(time) {
+  const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.12, audioContext.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let sample = 0; sample < noiseData.length; sample += 1) noiseData[sample] = Math.random() * 2 - 1;
+  const noise = audioContext.createBufferSource();
+  const volume = audioContext.createGain();
+  noise.buffer = noiseBuffer;
+  volume.gain.setValueAtTime(0.18, time);
+  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+  noise.connect(volume).connect(musicGain);
+  noise.start(time);
+  noise.stop(time + 0.13);
+}
+
+function playHiHat(time) {
+  const oscillator = audioContext.createOscillator();
+  const volume = audioContext.createGain();
+  oscillator.type = 'square';
+  oscillator.frequency.value = 4200;
+  volume.gain.setValueAtTime(0.035, time);
+  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
+  oscillator.connect(volume).connect(musicGain);
+  oscillator.start(time);
+  oscillator.stop(time + 0.04);
+}
+
+function playBass(time, frequency) {
+  const oscillator = audioContext.createOscillator();
+  const volume = audioContext.createGain();
+  oscillator.type = 'sawtooth';
+  oscillator.frequency.value = frequency;
+  volume.gain.setValueAtTime(0.08, time);
+  volume.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
+  oscillator.connect(volume).connect(musicGain);
+  oscillator.start(time);
+  oscillator.stop(time + 0.24);
+}
+
+function scheduleBeat(time, step) {
+  if (step % 4 === 0 || step % 4 === 2) playKick(time);
+  if (step % 4 === 1 || step % 4 === 3) playSnare(time);
+  playHiHat(time);
+  if (step % 2 === 0) playBass(time, step % 8 === 0 ? 98 : 73.42);
+}
+
 function startMusic() {
-  audioContext = audioContext || new AudioContext();
+  audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+  audioContext.resume();
   musicGain = audioContext.createGain();
   musicGain.gain.setValueAtTime(0, audioContext.currentTime);
-  musicGain.gain.linearRampToValueAtTime(0.035, audioContext.currentTime + 1.2);
+  musicGain.gain.linearRampToValueAtTime(0.55, audioContext.currentTime + 0.5);
   musicGain.connect(audioContext.destination);
-
-  [196, 246.94, 293.66].forEach((frequency, index) => {
-    const oscillator = audioContext.createOscillator();
-    const voiceGain = audioContext.createGain();
-    oscillator.type = index === 0 ? 'sine' : 'triangle';
-    oscillator.frequency.value = frequency;
-    voiceGain.gain.value = index === 0 ? 0.65 : 0.28;
-    oscillator.connect(voiceGain).connect(musicGain);
-    oscillator.start();
-    musicNodes.push(oscillator);
-  });
+  nextBeatTime = audioContext.currentTime + 0.05;
+  beatStep = 0;
+  const secondsPerBeat = 60 / 128 / 2;
+  musicSchedulerId = setInterval(() => {
+    while (nextBeatTime < audioContext.currentTime + 0.1) {
+      scheduleBeat(nextBeatTime, beatStep);
+      nextBeatTime += secondsPerBeat;
+      beatStep = (beatStep + 1) % 16;
+    }
+  }, 25);
   setMusicButton(true);
 }
 
 function toggleMusic() {
-  if (musicNodes.length > 0) {
+  if (musicSchedulerId) {
     stopMusic();
     return;
   }
