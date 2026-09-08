@@ -6,11 +6,15 @@ const statusMessage = document.querySelector('#status-message');
 const completedCount = document.querySelector('#completed-count');
 const startButton = document.querySelector('#start-button');
 const resetButton = document.querySelector('#reset-button');
+const musicButton = document.querySelector('#music-button');
 const circumference = 2 * Math.PI * 132;
 
 let secondsRemaining = INTERVAL_SECONDS;
 let completedIntervals = 0;
 let timerId = null;
+let audioContext = null;
+let musicGain = null;
+let musicNodes = [];
 
 ring.style.strokeDasharray = circumference;
 
@@ -75,8 +79,52 @@ function resetTimer() {
   render();
 }
 
+function setMusicButton(isPlaying) {
+  musicButton.setAttribute('aria-pressed', String(isPlaying));
+  musicButton.querySelector('span:last-child').textContent = isPlaying ? 'Ambient sound on' : 'Ambient sound off';
+}
+
+function stopMusic() {
+  if (!musicGain || !audioContext) return;
+  const fadeTime = audioContext.currentTime + 0.25;
+  musicGain.gain.cancelScheduledValues(audioContext.currentTime);
+  musicGain.gain.linearRampToValueAtTime(0, fadeTime);
+  musicNodes.forEach((node) => node.stop(fadeTime));
+  musicNodes = [];
+  setMusicButton(false);
+}
+
+function startMusic() {
+  audioContext = audioContext || new AudioContext();
+  musicGain = audioContext.createGain();
+  musicGain.gain.setValueAtTime(0, audioContext.currentTime);
+  musicGain.gain.linearRampToValueAtTime(0.035, audioContext.currentTime + 1.2);
+  musicGain.connect(audioContext.destination);
+
+  [196, 246.94, 293.66].forEach((frequency, index) => {
+    const oscillator = audioContext.createOscillator();
+    const voiceGain = audioContext.createGain();
+    oscillator.type = index === 0 ? 'sine' : 'triangle';
+    oscillator.frequency.value = frequency;
+    voiceGain.gain.value = index === 0 ? 0.65 : 0.28;
+    oscillator.connect(voiceGain).connect(musicGain);
+    oscillator.start();
+    musicNodes.push(oscillator);
+  });
+  setMusicButton(true);
+}
+
+function toggleMusic() {
+  if (musicNodes.length > 0) {
+    stopMusic();
+    return;
+  }
+  startMusic();
+}
+
 startButton.addEventListener('click', toggleTimer);
 resetButton.addEventListener('click', resetTimer);
+musicButton.addEventListener('click', toggleMusic);
 document.addEventListener('keydown', (event) => {
   if (event.code === 'Space' && event.target === document.body) {
     event.preventDefault();
