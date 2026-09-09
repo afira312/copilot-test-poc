@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: dtap-${{ github.ref }}
@@ -40,17 +42,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: Development
     steps:
-      - name: Checkout deployment action
-        uses: actions/checkout@v4
-
-      - name: Deploy artifact
-        uses: ./.github/actions/deploy-static-site
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
-          artifact-name: site-${{ github.sha }}
-          deploy-host: ${{ secrets.DEPLOY_HOST }}
-          deploy-user: ${{ secrets.DEPLOY_USER }}
-          deploy-path: ${{ secrets.DEPLOY_PATH }}
-          ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
+          name: site-${{ github.sha }}
+      - name: Validate Development artifact
+        run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
 
   test:
     name: Deploy Test
@@ -59,17 +56,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: Test
     steps:
-      - name: Checkout deployment action
-        uses: actions/checkout@v4
-
-      - name: Deploy artifact
-        uses: ./.github/actions/deploy-static-site
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
-          artifact-name: site-${{ github.sha }}
-          deploy-host: ${{ secrets.DEPLOY_HOST }}
-          deploy-user: ${{ secrets.DEPLOY_USER }}
-          deploy-path: ${{ secrets.DEPLOY_PATH }}
-          ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
+          name: site-${{ github.sha }}
+      - name: Validate Test artifact
+        run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
 
   acceptance:
     name: Deploy Acceptance
@@ -78,17 +70,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: Acceptance
     steps:
-      - name: Checkout deployment action
-        uses: actions/checkout@v4
-
-      - name: Deploy artifact
-        uses: ./.github/actions/deploy-static-site
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
-          artifact-name: site-${{ github.sha }}
-          deploy-host: ${{ secrets.DEPLOY_HOST }}
-          deploy-user: ${{ secrets.DEPLOY_USER }}
-          deploy-path: ${{ secrets.DEPLOY_PATH }}
-          ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
+          name: site-${{ github.sha }}
+      - name: Validate Acceptance artifact
+        run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
 
   production:
     name: Deploy Production
@@ -97,14 +84,18 @@ jobs:
     runs-on: ubuntu-latest
     environment: Production
     steps:
-      - name: Checkout deployment action
-        uses: actions/checkout@v4
-
-      - name: Deploy artifact
-        uses: ./.github/actions/deploy-static-site
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
-          artifact-name: site-${{ github.sha }}
-          deploy-host: ${{ secrets.DEPLOY_HOST }}
-          deploy-user: ${{ secrets.DEPLOY_USER }}
-          deploy-path: ${{ secrets.DEPLOY_PATH }}
-          ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
+          name: site-${{ github.sha }}
+      - name: Prepare Pages artifact
+        run: mkdir site && tar -xzf site-${{ github.sha }}.tgz -C site
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
