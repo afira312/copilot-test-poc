@@ -2,11 +2,11 @@ name: CI and Security
 
 on:
   pull_request:
+    branches:
+      - main
   push:
     branches:
-      - develop
       - main
-      - 'release/**'
 
 permissions:
   contents: read
@@ -27,6 +27,16 @@ jobs:
           test -f script.js
           grep -q '<!doctype html>' index.html
           grep -q 'script.js' index.html
+
+      - name: Require feature branch pull requests
+        if: github.event_name == 'pull_request'
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          case "$BRANCH_NAME" in
+            feature/*) ;;
+            *) echo "Pull requests must come from a feature/* branch"; exit 1 ;;
+          esac
 
       - name: Check JavaScript syntax
         run: node --check script.js
