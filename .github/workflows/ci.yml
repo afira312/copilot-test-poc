@@ -1,0 +1,49 @@
+name: CI and Security
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - main
+      - 'release/**'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  validate:
+    name: Validate site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check required site files
+        run: |
+          test -f index.html
+          test -f styles.css
+          test -f script.js
+          grep -q '<!doctype html>' index.html
+          grep -q 'script.js' index.html
+
+      - name: Check JavaScript syntax
+        run: node --check script.js
+
+      - name: Check for accidental secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  workflow-security:
+    name: Review workflow security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan GitHub Actions workflows
+        uses: zizmorcore/zizmor-action@v0.2.0
+        with:
+          persona: pedantic

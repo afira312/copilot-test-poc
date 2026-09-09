@@ -1,0 +1,41 @@
+name: Deploy static site
+description: Download and deploy the immutable static-site artifact over SSH.
+inputs:
+  artifact-name:
+    description: Artifact name produced by the build job.
+    required: true
+  deploy-host:
+    description: Target host from the GitHub Environment secret.
+    required: true
+  deploy-user:
+    description: Target user from the GitHub Environment secret.
+    required: true
+  deploy-path:
+    description: Target directory from the GitHub Environment secret.
+    required: true
+  ssh-key:
+    description: Private deployment key from the GitHub Environment secret.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+
+    - name: Prepare artifact
+      shell: bash
+      run: mkdir site && tar -xzf '${{ inputs.artifact-name }}.tgz' -C site
+
+    - name: Configure SSH
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: ${{ inputs.ssh-key }}
+
+    - name: Deploy with rsync
+      shell: bash
+      run: |
+        rsync -az --delete \
+          -e "ssh -o StrictHostKeyChecking=yes" \
+          site/ "${{ inputs.deploy-user }}@${{ inputs.deploy-host }}:${{ inputs.deploy-path }}/"

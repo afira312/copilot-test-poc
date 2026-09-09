@@ -1,0 +1,110 @@
+name: Promote DTAP artifact
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - 'release/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dtap-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build immutable artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Package site
+        run: tar -czf site-${{ github.sha }}.tgz index.html styles.css script.js
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-${{ github.sha }}
+          path: site-${{ github.sha }}.tgz
+          retention-days: 14
+
+  development:
+    name: Deploy Development
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: Development
+    steps:
+      - name: Checkout deployment action
+        uses: actions/checkout@v4
+
+      - name: Deploy artifact
+        uses: ./.github/actions/deploy-static-site
+        with:
+          artifact-name: site-${{ github.sha }}
+          deploy-host: ${{ secrets.DEPLOY_HOST }}
+          deploy-user: ${{ secrets.DEPLOY_USER }}
+          deploy-path: ${{ secrets.DEPLOY_PATH }}
+          ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+  test:
+    name: Deploy Test
+    needs: development
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: Test
+    steps:
+      - name: Checkout deployment action
+        uses: actions/checkout@v4
+
+      - name: Deploy artifact
+        uses: ./.github/actions/deploy-static-site
+        with:
+          artifact-name: site-${{ github.sha }}
+          deploy-host: ${{ secrets.DEPLOY_HOST }}
+          deploy-user: ${{ secrets.DEPLOY_USER }}
+          deploy-path: ${{ secrets.DEPLOY_PATH }}
+          ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+  acceptance:
+    name: Deploy Acceptance
+    needs: build
+    if: startsWith(github.ref, 'refs/heads/release/')
+    runs-on: ubuntu-latest
+    environment: Acceptance
+    steps:
+      - name: Checkout deployment action
+        uses: actions/checkout@v4
+
+      - name: Deploy artifact
+        uses: ./.github/actions/deploy-static-site
+        with:
+          artifact-name: site-${{ github.sha }}
+          deploy-host: ${{ secrets.DEPLOY_HOST }}
+          deploy-user: ${{ secrets.DEPLOY_USER }}
+          deploy-path: ${{ secrets.DEPLOY_PATH }}
+          ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+  production:
+    name: Deploy Production
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+      - name: Checkout deployment action
+        uses: actions/checkout@v4
+
+      - name: Deploy artifact
+        uses: ./.github/actions/deploy-static-site
+        with:
+          artifact-name: site-${{ github.sha }}
+          deploy-host: ${{ secrets.DEPLOY_HOST }}
+          deploy-user: ${{ secrets.DEPLOY_USER }}
+          deploy-path: ${{ secrets.DEPLOY_PATH }}
+          ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
