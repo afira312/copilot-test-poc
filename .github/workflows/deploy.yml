@@ -6,6 +6,8 @@ on:
       - main
   workflow_dispatch:
 
+## add input to select environment (options dev/prod for poc)
+
 permissions:
   contents: read
   pages: write
@@ -24,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Package site
-        run: tar -czf site-${{ github.sha }}.tgz index.html styles.css script.js
+        run: tar -czf site-${{ github.sha }}.tgz src/index.html src/styles.css src/script.js
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -33,12 +35,11 @@ jobs:
           path: site-${{ github.sha }}.tgz
           retention-days: 14
 
-  development:
-    name: Deploy Development
+  deployment:
+    name: Deploy
     needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: Development
+    runs-on: ubuntu-latest"
+    environment: Development # (replace with input.environment || "Development")
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -46,46 +47,6 @@ jobs:
           name: site-${{ github.sha }}
       - name: Validate Development artifact
         run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
-
-  test:
-    name: Deploy Test
-    needs: development
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: Test
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: site-${{ github.sha }}
-      - name: Validate Test artifact
-        run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
-
-  acceptance:
-    name: Deploy Acceptance
-    needs: test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: Acceptance
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: site-${{ github.sha }}
-      - name: Validate Acceptance artifact
-        run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
-
-  production:
-    name: Deploy Production
-    needs: acceptance
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: Production
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: site-${{ github.sha }}
       - name: Prepare Pages artifact
         run: mkdir site && tar -xzf site-${{ github.sha }}.tgz -C site
       - name: Configure GitHub Pages
@@ -97,3 +58,55 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+
+  #test:
+  #  name: Deploy Test
+  #  needs: development
+  #  if: github.ref == 'refs/heads/main'
+  #  runs-on: ubuntu-latest
+  #  environment: Test
+  #  steps:
+  #    - name: Download artifact
+  #      uses: actions/download-artifact@v4
+  #      with:
+  #        name: site-${{ github.sha }}
+  #    - name: Validate Test artifact
+  #      run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
+#
+  #acceptance:
+  #  name: Deploy Acceptance
+  #  needs: build
+  #  if: github.ref == 'refs/heads/main'
+  #  runs-on: ubuntu-latest
+  #  environment: Acceptance
+  #  steps:
+  #    - name: Download artifact
+  #      uses: actions/download-artifact@v4
+  #      with:
+  #        name: site-${{ github.sha }}
+  #    - name: Validate Acceptance artifact
+  #      run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
+#
+  #production:
+  #  name: Deploy Production
+  #  needs: build
+  #  if: github.ref == 'refs/heads/main'
+  #  runs-on: ubuntu-latest
+  #  environment: Production
+  #  steps:
+  #    - name: Download artifact
+  #      uses: actions/download-artifact@v4
+  #      with:
+  #        name: site-${{ github.sha }}
+  #    - name: Prepare Pages artifact
+  #      run: mkdir site && tar -xzf site-${{ github.sha }}.tgz -C site
+  #    - name: Configure GitHub Pages
+  #      uses: actions/configure-pages@v5
+  #    - name: Upload Pages artifact
+  #      uses: actions/upload-pages-artifact@v3
+  #      with:
+  #        path: site
+  #    - name: Deploy to GitHub Pages
+  #      id: deployment
+  #      uses: actions/deploy-pages@v4
