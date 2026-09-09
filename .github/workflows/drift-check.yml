@@ -54,9 +54,9 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
         run: |
           set -euo pipefail
-          : "${OPENAI_API_KEY:?Configure OPENAI_API_KEY in the Drift-Check environment}"
-          : "${OPENAI_API_URL:?Configure OPENAI_API_URL in the Drift-Check environment}"
-          : "${OPENAI_MODEL:?Configure OPENAI_MODEL in the Drift-Check environment}"
+          : "${OPENAI_API_KEY:?Configure OPENAI_API_KEY in the Github Actions Secrets}"
+          : "${OPENAI_API_URL:?Configure OPENAI_API_URL in the Github Actions Variables}"
+          : "${OPENAI_MODEL:?Configure OPENAI_MODEL in the Github Actions Variables}"
 
           jq -n \
             --arg model "$OPENAI_MODEL" \
