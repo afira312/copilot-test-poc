@@ -1,0 +1,5 @@
+storage_account_name="defaultswc"
+container_name="tfstate"
+key="dev/ah-poc-dtap-frc.tfstate"
+resource_group_name="default-rg"
+subscription_id="8486ac29-bcbd-4691-9ff6-52a901335eb0"
