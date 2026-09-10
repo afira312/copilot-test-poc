@@ -30,7 +30,7 @@ jobs:
         run: echo "formattedDate=$(date +'%y%m%d.%H%M')" >> "$GITHUB_OUTPUT"
 
       - name: Package site
-        run: tar -czf site-${{ steps.ts.outputs.formattedDate }}.tgz ./src
+        run: tar -czf site-${{ steps.ts.outputs.formattedDate }}.tgz -C ./src *
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
