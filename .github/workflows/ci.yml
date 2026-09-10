@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read # Read repository contents
-  security-events: write # Update sec events
 
 jobs:
   validate:
@@ -51,6 +50,8 @@ jobs:
 
   workflow-security:
     name: Review workflow security
+    permissions:
+      security-events: write # Update sec events
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
