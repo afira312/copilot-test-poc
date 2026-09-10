@@ -33,7 +33,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: contoso-poc
+  group: tfplan-${{ github.event.pull_request.number || inputs.pull_request_number }}
   cancel-in-progress: false
 
 jobs:

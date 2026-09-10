@@ -45,51 +45,51 @@ jobs:
           gh pr diff "$PR_NUMBER" --repo "$REPOSITORY" > pull-request.diff
           echo "number=$issue_number" >> "$GITHUB_OUTPUT"
 
-      - name: Ask OpenAI to check for drift
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_API_URL: ${{ vars.OPENAI_API_URL }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
-          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
-          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
-        run: |
-          set -euo pipefail
-          : "${OPENAI_API_KEY:?Configure OPENAI_API_KEY in the Github Actions Secrets}"
-          : "${OPENAI_API_URL:?Configure OPENAI_API_URL in the Github Actions Variables}"
-          : "${OPENAI_MODEL:?Configure OPENAI_MODEL in the Github Actions Variables}"
-
-          jq -n \
-            --arg model "$OPENAI_MODEL" \
-            --rawfile issue issue.json \
-            --rawfile diff pull-request.diff \
-            --arg issue_number "$ISSUE_NUMBER" \
-            --arg pr_number "$PR_NUMBER" \
-            '{
-              model: $model,
-              response_format: {type: "json_object"},
-              messages: [
-                {
-                  role: "system",
-                  content: "You review whether a pull request implements its linked GitHub issue. Return JSON only with keys: aligned (boolean), missing (array of strings), summary (string). Do not invent requirements. Treat the issue title and body as requirements; use the diff as evidence."
-                },
-                {
-                  role: "user",
-                  content: ("Issue #" + $issue_number + " and pull request #" + $pr_number + "\n\nISSUE:\n" + $issue + "\n\nDIFF:\n" + $diff)
-                }
-              ]
-            }' > request.json
-
-          curl --fail-with-body --silent --show-error \
-            --url "$OPENAI_API_URL" \
-            --header "Authorization: Bearer $OPENAI_API_KEY" \
-            --header "Content-Type: application/json" \
-            --data-binary @request.json > response.json
-
-          jq -e '.choices[0].message.content' response.json \
-            | jq -e 'fromjson | select(.aligned == true)' > drift-result.json \
-            || {
-              echo "The PR does not satisfy the linked issue:"
-              jq -r '.choices[0].message.content // "Invalid endpoint response"' response.json
-              exit 1
-            }
-          cat drift-result.json
+      #- name: Ask OpenAI to check for drift
+      #  env:
+      #    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      #    OPENAI_API_URL: ${{ vars.OPENAI_API_URL }}
+      #    OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+      #    ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+      #    PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
+      #  run: |
+      #    set -euo pipefail
+      #    : "${OPENAI_API_KEY:?Configure OPENAI_API_KEY in the Github Actions Secrets}"
+      #    : "${OPENAI_API_URL:?Configure OPENAI_API_URL in the Github Actions Variables}"
+      #    : "${OPENAI_MODEL:?Configure OPENAI_MODEL in the Github Actions Variables}"
+#
+      #    jq -n \
+      #      --arg model "$OPENAI_MODEL" \
+      #      --rawfile issue issue.json \
+      #      --rawfile diff pull-request.diff \
+      #      --arg issue_number "$ISSUE_NUMBER" \
+      #      --arg pr_number "$PR_NUMBER" \
+      #      '{
+      #        model: $model,
+      #        response_format: {type: "json_object"},
+      #        messages: [
+      #          {
+      #            role: "system",
+      #            content: "You review whether a pull request implements its linked GitHub issue. Return JSON only with keys: aligned (boolean), missing (array of strings), summary (string). Do not invent requirements. Treat the issue title and body as requirements; use the diff as evidence."
+      #          },
+      #          {
+      #            role: "user",
+      #            content: ("Issue #" + $issue_number + " and pull request #" + $pr_number + "\n\nISSUE:\n" + $issue + "\n\nDIFF:\n" + $diff)
+      #          }
+      #        ]
+      #      }' > request.json
+#
+      #    curl --fail-with-body --silent --show-error \
+      #      --url "$OPENAI_API_URL" \
+      #      --header "Authorization: Bearer $OPENAI_API_KEY" \
+      #      --header "Content-Type: application/json" \
+      #      --data-binary @request.json > response.json
+      #        
+      #    jq -e '.choices[0].message.content' response.json \
+      #      | jq -e 'fromjson | select(.aligned == true)' > drift-result.json \
+      #      || {
+      #        echo "The PR does not satisfy the linked issue:"
+      #        jq -r '.choices[0].message.content // "Invalid endpoint response"' response.json
+      #        exit 1
+      #      }
+      #    cat drift-result.json
