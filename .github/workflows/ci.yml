@@ -42,7 +42,7 @@ jobs:
           esac
 
       - name: Check JavaScript syntax
-        run: node --check script.js
+        run: node --check src/script.js
 
       - name: Check for accidental secrets
         uses: gitleaks/gitleaks-action@v2
