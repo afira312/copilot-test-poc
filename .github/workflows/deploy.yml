@@ -25,15 +25,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Generate timestamp
+        id: ts
+        run: echo "formattedDate=$(date +'%y%m%d.%H%M')" >> "$GITHUB_OUTPUT"
+
       - name: Package site
-        run: tar -czf site-${{ github.sha }}.tgz src/index.html src/styles.css src/script.js
+        run: tar -czf site-${{ steps.ts.outputs.formattedDate }}.tgz ./src
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: site-${{ github.sha }}
-          path: site-${{ github.sha }}.tgz
+          name: site-${{ steps.ts.outputs.formattedDate }}
+          path: site-${{ steps.ts.outputs.formattedDate }}.tgz
           retention-days: 14
+    outputs:
+      formattedDate: ${{ steps.ts.outputs.formattedDate }}
 
   deployment:
     name: Deploy
@@ -44,11 +50,11 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: site-${{ github.sha }}
+          name: site-${{ needs.build.outputs.formattedDate }}
       - name: Validate Development artifact
-        run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
+        run: tar -tzf site-${{ needs.build.outputs.formattedDate }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
       - name: Prepare Pages artifact
-        run: mkdir site && tar -xzf site-${{ github.sha }}.tgz -C site
+        run: mkdir site && tar -xzf site-${{ needs.build.outputs.formattedDate }}.tgz -C site
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
@@ -72,7 +78,7 @@ jobs:
   #      with:
   #        name: site-${{ github.sha }}
   #    - name: Validate Test artifact
-  #      run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
+  #      run: tar -tzf site-${{ steps.ts.outputs.formattedDate }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
 #
   #acceptance:
   #  name: Deploy Acceptance
@@ -86,7 +92,7 @@ jobs:
   #      with:
   #        name: site-${{ github.sha }}
   #    - name: Validate Acceptance artifact
-  #      run: tar -tzf site-${{ github.sha }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
+  #      run: tar -tzf site-${{ steps.ts.outputs.formattedDate }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
 #
   #production:
   #  name: Deploy Production
@@ -100,7 +106,7 @@ jobs:
   #      with:
   #        name: site-${{ github.sha }}
   #    - name: Prepare Pages artifact
-  #      run: mkdir site && tar -xzf site-${{ github.sha }}.tgz -C site
+  #      run: mkdir site && tar -xzf site-${{ steps.ts.outputs.formattedDate }}.tgz -C site
   #    - name: Configure GitHub Pages
   #      uses: actions/configure-pages@v5
   #    - name: Upload Pages artifact
