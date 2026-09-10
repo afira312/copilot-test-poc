@@ -10,8 +10,6 @@ on:
 
 permissions:
   contents: read # Read repository contents
-  pages: write # Deploy to github pages
-  id-token: write # Deploy to github pages
 
 concurrency:
   group: dtap-${{ github.ref }}
@@ -30,7 +28,9 @@ jobs:
         run: echo "formattedDate=$(date +'%y%m%d.%H%M')" >> "$GITHUB_OUTPUT"
 
       - name: Package site
-        run: tar -czf site-${{ steps.ts.outputs.formattedDate }}.tgz -C ./src *
+        env:
+          ARTIFACT_NAME: site-${{ steps.ts.outputs.formattedDate }}.tgz
+        run: tar -czf ${ARTIFACT_NAME} -C ./src *
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -46,15 +46,20 @@ jobs:
     needs: build
     runs-on: ubuntu-latest"
     environment: Development # (replace with input.environment || "Development")
+    permissions:
+      pages: write # Deploy to github pages
+      id-token: write # Deploy to github pages
+    env:
+      ARTIFACT_NAME: site-${{ needs.build.outputs.formattedDate }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: site-${{ needs.build.outputs.formattedDate }}
+          name: ${{ env.ARTIFACT_NAME }}
       - name: Validate Development artifact
-        run: tar -tzf site-${{ needs.build.outputs.formattedDate }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
+        run: tar -tzf ${{ env.ARTIFACT_NAME }}.tgz | grep -E '^(index.html|styles.css|script.js)$'
       - name: Prepare Pages artifact
-        run: mkdir site && tar -xzf site-${{ needs.build.outputs.formattedDate }}.tgz -C site
+        run: mkdir site && tar -xzf ${{ env.ARTIFACT_NAME }}.tgz -C site
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
