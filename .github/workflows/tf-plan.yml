@@ -29,16 +29,17 @@ env:
   TF_ENVIRONMENT: ${{ inputs.environment || 'dev' }}
 
 permissions:
-  id-token: write
-  contents: read
+  contents: read #read repository content
 
 concurrency:
-  group: tfplan-${{ github.event.pull_request.number || inputs.pull_request_number }}
+  group: tfplan-${{ inputs.environment || 'dev' }}
   cancel-in-progress: false
 
 jobs:
   plan:
     name: "Plan"
+    permissions:
+      id-token: write # write id-tokens
     #environment: Development
     env:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -66,7 +67,6 @@ jobs:
         run: |
           terraform init -backend-config="${{ env.TF_ENVIRONMENT }}/${{ env.TF_ENVIRONMENT }}.tfbackend" -input=false
           terraform validate
-
 
       - name: Terraform Plan
         working-directory: ${{ env.TF_WORKING_DIR }}
