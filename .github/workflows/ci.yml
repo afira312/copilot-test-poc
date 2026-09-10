@@ -9,8 +9,8 @@ on:
       - main
 
 permissions:
-  contents: read
-  security-events: write
+  contents: read # Read repository contents
+  security-events: write # Update sec events
 
 jobs:
   validate:

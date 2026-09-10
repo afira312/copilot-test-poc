@@ -9,9 +9,9 @@ on:
 ## add input to select environment (options dev/prod for poc)
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: read # Read repository contents
+  pages: write # Deploy to github pages
+  id-token: write # Deploy to github pages
 
 concurrency:
   group: dtap-${{ github.ref }}

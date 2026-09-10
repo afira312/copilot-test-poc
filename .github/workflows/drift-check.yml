@@ -11,9 +11,9 @@ on:
         type: string
 
 permissions:
-  contents: read
-  issues: read
-  pull-requests: read
+  contents: read # Read repository contents
+  issues: read # Read issue data
+  pull-requests: read # Read PR metadata
 
 concurrency:
   group: drift-check-${{ github.event.pull_request.number || inputs.pull_request_number }}
