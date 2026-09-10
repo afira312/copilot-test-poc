@@ -24,6 +24,7 @@ jobs:
 
       - name: Check required site files
         run: |
+          cd src
           test -f index.html
           test -f styles.css
           test -f script.js
