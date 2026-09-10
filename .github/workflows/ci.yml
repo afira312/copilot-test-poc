@@ -9,8 +9,7 @@ on:
       - main
 
 permissions:
-  contents: read
-  security-events: write
+  contents: read # Read repository contents
 
 jobs:
   validate:
@@ -18,12 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 
       - name: Check required site files
         run: |
+          cd src
           test -f index.html
           test -f styles.css
           test -f script.js
@@ -41,7 +41,7 @@ jobs:
           esac
 
       - name: Check JavaScript syntax
-        run: node --check script.js
+        run: node --check src/script.js
 
       - name: Check for accidental secrets
         uses: gitleaks/gitleaks-action@v2
@@ -50,10 +50,12 @@ jobs:
 
   workflow-security:
     name: Review workflow security
+    permissions:
+      security-events: write # Update sec events
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Scan GitHub Actions workflows
         uses: zizmorcore/zizmor-action@v0.2.0
